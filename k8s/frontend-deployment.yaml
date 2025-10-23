@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: newsbuddy-frontend
+  namespace: newsbuddy-production
+  labels:
+    app: newsbuddy-frontend
+    environment: production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: newsbuddy-frontend
+  template:
+    metadata:
+      labels:
+        app: newsbuddy-frontend
+    spec:
+      containers:
+      - name: newsbuddy-frontend
+        image: YOUR_ECR_REGISTRY/newsbuddy-frontend:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      imagePullSecrets:
+      - name: ecr-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: newsbuddy-frontend-service
+  namespace: newsbuddy-production
+  labels:
+    app: newsbuddy-frontend
+spec:
+  selector:
+    app: newsbuddy-frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: newsbuddy-frontend-hpa
+  namespace: newsbuddy-production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: newsbuddy-frontend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

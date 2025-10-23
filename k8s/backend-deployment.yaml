@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: newsbuddy-backend
+  namespace: newsbuddy-production
+  labels:
+    app: newsbuddy-backend
+    environment: production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: newsbuddy-backend
+  template:
+    metadata:
+      labels:
+        app: newsbuddy-backend
+    spec:
+      containers:
+      - name: newsbuddy-backend
+        image: YOUR_ECR_REGISTRY/newsbuddy-backend:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PORT
+          value: "5000"
+        envFrom:
+        - configMapRef:
+            name: newsbuddy-config
+        - secretRef:
+            name: newsbuddy-secrets
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {}
+      imagePullSecrets:
+      - name: ecr-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: newsbuddy-backend-service
+  namespace: newsbuddy-production
+  labels:
+    app: newsbuddy-backend
+spec:
+  selector:
+    app: newsbuddy-backend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 5000
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: newsbuddy-backend-hpa
+  namespace: newsbuddy-production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: newsbuddy-backend
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
