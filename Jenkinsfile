@@ -12,6 +12,13 @@ pipeline{
 				sh 'npm install'
 			}
 		}
+		stage('Check Node Environment') {
+    			steps {
+        			sh 'node -v'	
+        			sh 'npm -v'	
+    			}
+		}
+
 		stage('Build'){
 			steps{
 				sh 'npm run build'
