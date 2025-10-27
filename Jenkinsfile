@@ -1,42 +1,58 @@
-pipeline{
-	agent any
+pipeline {
+    agent any
 
-	stages{
-		stage('checkout'){
-			steps{
-				checkout scm
-				}
-		}
-		stage('Check Node Environment') {
-    			steps {
-        			sh 'node -v'
-        			sh 'npm -v'
-    			}
-		}
-		
-		stage('Installing Dependencies'){
-			steps{
-				sh 'npm install'
-			}
-		}
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
-		stage('Build'){
-			steps{
-				sh 'npm run build'
-			}
-		}
-		stage('Test'){
-			steps{
-				sh 'npm test || true'
-			}
-		}
-	}
-	post {
-		success{
-			echo 'Pipeline finished successfully!'
-		}
-		failure{
-			echo 'Pipeline failed.'
-		}
-	}
+        stage('Check Node Environment') {
+            steps {
+                sh 'node -v'
+                sh 'npm -v'
+            }
+        }
+
+        stage('Installing Dependencies') {
+            parallel {
+                stage('Installing Backend') {
+                    steps {
+                        sh 'cd backend && npm install'
+                    }
+                }
+                stage('Installing Frontend') {
+                    steps {
+                        sh 'cd frontend && npm install'
+                    }
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('frontend') {
+                    sh 'npm run build'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('frontend') {
+                    sh 'npm test || true'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline finished successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
 }
