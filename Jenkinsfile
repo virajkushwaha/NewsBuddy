@@ -1,7 +1,12 @@
 pipeline {
-    agent any
-
+    agent 
+	{
+	docker {
+		image 'node:18'
+		}
+	}
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
