@@ -1,6 +1,9 @@
 pipeline {
     agent {
-        docker { image 'node:18' }
+        docker {
+            image 'node:18'
+            args '-u root'
+        }
     }
     stages {
         stage('Checkout') {
@@ -20,12 +23,16 @@ pipeline {
             parallel {
                 stage('Installing Backend') {
                     steps {
-                        sh 'cd backend && npm install'
+                        dir('backend') {
+                            sh 'npm install'
+                        }
                     }
                 }
                 stage('Installing Frontend') {
                     steps {
-                        sh 'cd frontend && npm install'
+                        dir('frontend') {
+                            sh 'npm install'
+                        }
                     }
                 }
             }
@@ -42,7 +49,7 @@ pipeline {
         stage('Test') {
             steps {
                 dir('frontend') {
-                    sh 'npm test || true'
+                    sh 'npm test'
                 }
             }
         }
