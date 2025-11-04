@@ -1,5 +1,16 @@
 pipeline {
+<<<<<<< HEAD
     agent any
+=======
+    agent {
+        docker { image 'node:18' }
+    }
+
+    environment {
+        CI = 'false' // Prevents create-react-app from treating builds as CI
+    }
+
+>>>>>>> ca82df3 (The complete and workable pipeline)
     stages {
         stage('Checkout') {
             steps {
@@ -18,29 +29,59 @@ pipeline {
             parallel {
                 stage('Installing Backend') {
                     steps {
-                        sh 'cd backend && npm install'
+                        dir('backend') {
+                            sh 'npm install'
+                        }
                     }
                 }
                 stage('Installing Frontend') {
                     steps {
-                        sh 'cd frontend && npm install'
+                        dir('frontend') {
+                            sh 'npm install'
+                        }
                     }
                 }
             }
         }
 
         stage('Build') {
-            steps {
-                dir('frontend') {
-                    sh 'CI=false npm run build'
+            parallel {
+                stage('Building Frontend') {
+                    steps {
+                        dir('frontend') {
+                            sh 'npm run build'
+                        }
+                    }
+                }
+                stage('Building Backend') {
+                    steps {
+                        dir('backend') {
+                            sh 'npm run build'
+                        }
+                    }
                 }
             }
         }
 
         stage('Test') {
-            steps {
-                dir('frontend') {
-                    sh 'npm test || true'
+            parallel {
+                stage('Frontend Tests') {
+                    steps {
+                        dir('frontend') {
+                            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                                sh 'npm test'
+                            }
+                        }
+                    }
+                }
+                stage('Backend Tests') {
+                    steps {
+                        dir('backend') {
+                            catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                                sh 'npm test'
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -48,10 +89,13 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline finished successfully!'
+            echo '✅ Pipeline finished successfully!'
         }
         failure {
-            echo 'Pipeline failed.'
+            echo '❌ Pipeline failed.'
+        }
+        unstable {
+            echo '⚠️ Pipeline completed with test failures.'
         }
     }
 }
