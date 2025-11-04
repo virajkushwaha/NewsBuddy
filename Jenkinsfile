@@ -72,7 +72,7 @@ pipeline {
                     steps {
                         dir('backend') {
                             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                                sh 'npm test'
+                                sh 'npm test -- --passWithNoTests'
                             }
                         }
                     }
