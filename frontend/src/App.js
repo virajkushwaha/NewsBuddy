@@ -5,12 +5,14 @@ import { Box } from '@mui/material';
 import Layout from './components/Layout/Layout';
 import Home from './pages/Home';
 import PersonalizedFeed from './pages/PersonalizedFeed';
+import ForYou from './pages/ForYou';
 import Categories from './pages/Categories';
 import Search from './pages/Search';
 import ArticleDetail from './pages/ArticleDetail';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Trending from './pages/Trending';
 import NotFound from './pages/NotFound';
 
 import { useAuthStore } from './store/authStore';
@@ -66,9 +68,18 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="foryou" 
+          element={
+            <ProtectedRoute>
+              <ForYou />
+            </ProtectedRoute>
+          } 
+        />
         <Route path="categories" element={<Categories />} />
         <Route path="categories/:category" element={<Categories />} />
         <Route path="search" element={<Search />} />
+        <Route path="trending" element={<Trending />} />
         <Route path="article/:id" element={<ArticleDetail />} />
         <Route 
           path="profile" 

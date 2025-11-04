@@ -10,21 +10,18 @@ const Layout = () => {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
       
-      <Box sx={{ display: 'flex', flex: 1 }}>
+      <Box sx={{ display: 'flex', flex: 1, pt: { xs: 7, sm: 8 } }}>
         <Sidebar />
         
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            p: { xs: 1, sm: 2, md: 3 },
-            mt: { xs: 7, sm: 8 }, // Account for header height
-            ml: { md: '240px' }, // Account for sidebar width on desktop
+            minHeight: 0,
+            overflow: 'auto'
           }}
         >
-          <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2 } }}>
-            <Outlet />
-          </Container>
+          <Outlet />
         </Box>
       </Box>
       

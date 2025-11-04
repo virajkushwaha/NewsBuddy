@@ -1,7 +1,7 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : '/api');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -19,6 +19,19 @@ api.interceptors.request.use(
       ...config.params,
       _t: Date.now()
     };
+    
+    // Add auth token if available
+    const authData = localStorage.getItem('auth-storage');
+    if (authData) {
+      try {
+        const { state } = JSON.parse(authData);
+        if (state.token) {
+          config.headers.Authorization = `Bearer ${state.token}`;
+        }
+      } catch (error) {
+        console.error('Error parsing auth data:', error);
+      }
+    }
     
     return config;
   },

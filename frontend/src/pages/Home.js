@@ -17,11 +17,12 @@ import {
 } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { TrendingUp, Category, Newspaper } from '@mui/icons-material';
+import { TrendingUp, Category, Newspaper, Whatshot } from '@mui/icons-material';
 
 import newsService from '../services/newsService';
 import ArticleCard from '../components/News/ArticleCard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
+import { useAuthStore } from '../store/authStore';
 
 const categories = [
   { value: '', label: 'All', icon: '📰' },
@@ -34,34 +35,39 @@ const categories = [
 ];
 
 const Home = () => {
+  const { user } = useAuthStore();
   const [selectedCategory, setSelectedCategory] = useState('');
   const [articles, setArticles] = useState([]);
+  const [trendingArticles, setTrendingArticles] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [showPersonalized, setShowPersonalized] = useState(false);
 
   // Fetch news data
   const { isLoading, error } = useQuery(
-    ['headlines', selectedCategory, page],
+    ['headlines', selectedCategory, page, showPersonalized, user?.id],
     async () => {
       try {
-        if (selectedCategory) {
+        if (showPersonalized && user) {
+          return await newsService.getRecommendations(20);
+        } else if (selectedCategory) {
           return await newsService.getByCategory(selectedCategory, { page, pageSize: 20 });
         } else {
           return await newsService.getHeadlines({ page, pageSize: 20 });
         }
       } catch (err) {
         console.error('API Error:', err);
-        // Return mock data if API fails
-        return {
-          success: true,
-          data: generateMockArticles(20)
-        };
+        throw err;
       }
     },
     {
       onSuccess: (newData) => {
         if (page === 1) {
           setArticles(newData.data || []);
+          // Load trending on first page load
+          if (!showPersonalized) {
+            loadTrendingArticles();
+          }
         } else {
           setArticles(prev => [...prev, ...(newData.data || [])]);
         }
@@ -71,6 +77,21 @@ const Home = () => {
       staleTime: 5 * 60 * 1000,
     }
   );
+
+  const loadTrendingArticles = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/news/trending?limit=6');
+      const data = await response.json();
+      
+      if (data.success && data.data && data.data.length > 0) {
+        setTrendingArticles(data.data.slice(0, 3));
+      }
+    } catch (error) {
+      console.error('Failed to load trending articles:', error);
+    }
+  };
+
+
 
   // Generate mock articles for demo
   const generateMockArticles = (count) => {
@@ -148,65 +169,152 @@ const Home = () => {
           overflow: 'hidden'
         }}
       >
-        <Container maxWidth="xl">
+        <Box sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
           <Box sx={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
             <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 800 }}>
-              Stay Informed with NewsBuddy
+              {user ? `Welcome back, ${user.username}!` : 'Stay Informed with NewsBuddy'}
             </Typography>
             <Typography variant="h5" sx={{ mb: 4, opacity: 0.9 }}>
-              AI-powered personalized news from trusted sources worldwide
+              {user ? 'Your personalized news feed awaits' : 'AI-powered personalized news from trusted sources worldwide'}
             </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap', mb: 3 }}>
               <Chip icon={<TrendingUp />} label="Real-time Updates" color="secondary" />
               <Chip icon={<Category />} label="Multiple Categories" color="secondary" />
               <Chip icon={<Newspaper />} label="Trusted Sources" color="secondary" />
             </Box>
+            {user && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+                <Button
+                  variant={showPersonalized ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    setShowPersonalized(true);
+                    setSelectedCategory('');
+                    setPage(1);
+                    setArticles([]);
+                  }}
+                  sx={{ color: 'white', borderColor: 'white' }}
+                >
+                  For You
+                </Button>
+                <Button
+                  variant={!showPersonalized ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    setShowPersonalized(false);
+                    setSelectedCategory('');
+                    setPage(1);
+                    setArticles([]);
+                  }}
+                  sx={{ color: 'white', borderColor: 'white' }}
+                >
+                  All News
+                </Button>
+              </Box>
+            )}
           </Box>
-        </Container>
+        </Box>
       </Box>
 
-      <Container maxWidth="xl">
+      <Box sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
         {/* Category Tabs */}
-        <Paper elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
-          <Box sx={{ p: 2 }}>
-            <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 700, color: 'primary.main' }}>
-              📈 Latest Headlines
-            </Typography>
-            <Tabs
-              value={selectedCategory}
-              onChange={handleCategoryChange}
-              variant="scrollable"
-              scrollButtons="auto"
-              sx={{
-                '& .MuiTab-root': {
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  minHeight: 48
-                },
-              }}
-            >
-              {categories.map((category) => (
-                <Tab
-                  key={category.value}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <span>{category.icon}</span>
-                      {category.label}
-                    </Box>
-                  }
-                  value={category.value}
-                />
-              ))}
-            </Tabs>
-          </Box>
-        </Paper>
+        {!showPersonalized && (
+          <Paper elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
+            <Box sx={{ p: 2 }}>
+              <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 700, color: 'primary.main' }}>
+                📈 Latest Headlines
+              </Typography>
+              <Tabs
+                value={selectedCategory}
+                onChange={handleCategoryChange}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    minHeight: 48
+                  },
+                }}
+              >
+                {categories.map((category) => (
+                  <Tab
+                    key={category.value}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>{category.icon}</span>
+                        {category.label}
+                      </Box>
+                    }
+                    value={category.value}
+                  />
+                ))}
+              </Tabs>
+            </Box>
+          </Paper>
+        )}
+        
+        {showPersonalized && user && (
+          <Paper elevation={2} sx={{ mb: 4, borderRadius: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h4" component="h2" gutterBottom sx={{ fontWeight: 700 }}>
+                🎯 Personalized For You
+              </Typography>
+              <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                Articles curated based on your preferences and reading history
+              </Typography>
+            </Box>
+          </Paper>
+        )}
 
         {/* Error State */}
         {error && (
           <Alert severity="info" sx={{ mb: 4, borderRadius: 2 }}>
             Using demo data - API connection unavailable. The app is fully functional with sample news articles.
           </Alert>
+        )}
+
+        {/* Trending Section */}
+        {!showPersonalized && trendingArticles.length > 0 && (
+          <Paper elevation={2} sx={{ mb: 4, borderRadius: 3 }}>
+            <Box sx={{ p: 3 }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Whatshot color="error" />
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    🔥 Trending Now
+                  </Typography>
+                </Box>
+                <Box display="flex" gap={1}>
+                  <Button 
+                    variant="text" 
+                    size="small" 
+                    onClick={loadTrendingArticles}
+                    sx={{ minWidth: 'auto', p: 1 }}
+                  >
+                    🔄
+                  </Button>
+                  <Button variant="outlined" href="/trending">
+                    View All
+                  </Button>
+                </Box>
+              </Box>
+              <Grid container spacing={2}>
+                {trendingArticles.map((article, index) => (
+                  <Grid item xs={12} md={4} key={article.id || article._id || index}>
+                    <Box position="relative">
+                      <Chip
+                        label={`#${index + 1}`}
+                        color="error"
+                        size="small"
+                        sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}
+                      />
+                      <ArticleCard article={article} showCategory showSource />
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          </Paper>
         )}
 
         {/* Articles Grid */}
@@ -281,7 +389,7 @@ const Home = () => {
             </Button>
           </Paper>
         )}
-      </Container>
+      </Box>
     </>
   );
 };

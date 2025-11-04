@@ -23,9 +23,11 @@ const newsService = {
 
   // Get trending articles
   async getTrending(limit = 10) {
+    console.log('Making trending API call with limit:', limit); // Debug log
     const response = await api.get('/news/trending', { 
       params: { limit } 
     });
+    console.log('Trending API raw response:', response); // Debug log
     return response.data;
   },
 

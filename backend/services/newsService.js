@@ -200,6 +200,8 @@ class NewsService {
       throw error;
     }
   }
+
+
 }
 
 module.exports = new NewsService();

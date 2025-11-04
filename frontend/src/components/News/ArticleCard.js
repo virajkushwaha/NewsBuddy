@@ -234,7 +234,10 @@ const ArticleCard = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <AccessTime sx={{ fontSize: 14 }} color="action" />
             <Typography variant="caption" color="text.secondary">
-              {formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}
+              {article.publishedAt ? 
+                formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true }) : 
+                'Recently'
+              }
             </Typography>
           </Box>
         </Box>

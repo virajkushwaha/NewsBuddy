@@ -9,7 +9,9 @@ const logger = require('../utils/logger');
 // Get user profile
 router.get('/profile', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
+    const user = await User.findByPk(req.userId, {
+      attributes: { exclude: ['password'] }
+    });
     
     if (!user) {
       return res.status(404).json({
@@ -36,7 +38,7 @@ router.get('/profile', auth, async (req, res) => {
 // Update user profile
 router.put('/profile', auth, validateProfile, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findByPk(req.userId);
     
     if (!user) {
       return res.status(404).json({
@@ -46,12 +48,7 @@ router.put('/profile', auth, validateProfile, async (req, res) => {
     }
 
     // Update profile fields
-    Object.keys(req.body).forEach(key => {
-      if (user.profile.hasOwnProperty(key)) {
-        user.profile[key] = req.body[key];
-      }
-    });
-
+    user.profile = { ...user.profile, ...req.body };
     await user.save();
 
     res.json({
@@ -73,7 +70,9 @@ router.put('/profile', auth, validateProfile, async (req, res) => {
 // Get user preferences
 router.get('/preferences', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('preferences');
+    const user = await User.findByPk(req.userId, {
+      attributes: ['preferences']
+    });
     
     if (!user) {
       return res.status(404).json({
@@ -100,7 +99,7 @@ router.get('/preferences', auth, async (req, res) => {
 // Update user preferences
 router.put('/preferences', auth, validatePreferences, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findByPk(req.userId);
     
     if (!user) {
       return res.status(404).json({
@@ -132,7 +131,9 @@ router.put('/preferences', auth, validatePreferences, async (req, res) => {
 // Get user settings
 router.get('/settings', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('settings');
+    const user = await User.findByPk(req.userId, {
+      attributes: ['settings']
+    });
     
     if (!user) {
       return res.status(404).json({
@@ -159,7 +160,7 @@ router.get('/settings', auth, async (req, res) => {
 // Update user settings
 router.put('/settings', auth, validateSettings, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findByPk(req.userId);
     
     if (!user) {
       return res.status(404).json({
@@ -192,7 +193,9 @@ router.put('/settings', auth, validateSettings, async (req, res) => {
 router.get('/reading-history', auth, async (req, res) => {
   try {
     const { page = 1, pageSize = 20 } = req.query;
-    const user = await User.findById(req.userId).select('readingHistory');
+    const user = await User.findByPk(req.userId, {
+      attributes: ['readingHistory']
+    });
     
     if (!user) {
       return res.status(404).json({
@@ -242,8 +245,8 @@ router.post('/bookmarks', auth, async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.userId);
-    const article = await Article.findById(articleId);
+    const user = await User.findByPk(req.userId);
+    const article = await Article.findByPk(articleId);
     
     if (!user || !article) {
       return res.status(404).json({
@@ -292,7 +295,9 @@ router.post('/bookmarks', auth, async (req, res) => {
 router.get('/bookmarks', auth, async (req, res) => {
   try {
     const { page = 1, pageSize = 20 } = req.query;
-    const user = await User.findById(req.userId).select('bookmarks');
+    const user = await User.findByPk(req.userId, {
+      attributes: ['bookmarks']
+    });
     
     if (!user) {
       return res.status(404).json({
@@ -334,7 +339,7 @@ router.get('/bookmarks', auth, async (req, res) => {
 router.delete('/bookmarks/:articleId', auth, async (req, res) => {
   try {
     const { articleId } = req.params;
-    const user = await User.findById(req.userId);
+    const user = await User.findByPk(req.userId);
     
     if (!user) {
       return res.status(404).json({

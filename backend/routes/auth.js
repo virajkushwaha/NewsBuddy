@@ -13,7 +13,12 @@ router.post('/register', validateRegistration, async (req, res) => {
 
     // Check if user already exists
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
+      where: {
+        [User.sequelize.Sequelize.Op.or]: [
+          { email },
+          { username }
+        ]
+      }
     });
 
     if (existingUser) {
@@ -24,18 +29,16 @@ router.post('/register', validateRegistration, async (req, res) => {
     }
 
     // Create new user
-    const user = new User({
+    const user = await User.create({
       username,
       email,
       password,
       preferences: preferences || {}
     });
 
-    await user.save();
-
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user.id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE || '7d' }
     );
@@ -48,7 +51,7 @@ router.post('/register', validateRegistration, async (req, res) => {
       data: {
         token,
         user: {
-          id: user._id,
+          id: user.id,
           username: user.username,
           email: user.email,
           preferences: user.preferences,
@@ -73,7 +76,7 @@ router.post('/login', validateLogin, async (req, res) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -96,7 +99,7 @@ router.post('/login', validateLogin, async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user.id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE || '7d' }
     );
@@ -109,7 +112,7 @@ router.post('/login', validateLogin, async (req, res) => {
       data: {
         token,
         user: {
-          id: user._id,
+          id: user.id,
           username: user.username,
           email: user.email,
           preferences: user.preferences,
@@ -132,7 +135,9 @@ router.post('/login', validateLogin, async (req, res) => {
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('-password');
+    const user = await User.findByPk(req.userId, {
+      attributes: { exclude: ['password'] }
+    });
     
     if (!user) {
       return res.status(404).json({
@@ -159,7 +164,7 @@ router.get('/me', auth, async (req, res) => {
 // Refresh token
 router.post('/refresh', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
+    const user = await User.findByPk(req.userId);
     
     if (!user) {
       return res.status(404).json({
@@ -170,7 +175,7 @@ router.post('/refresh', auth, async (req, res) => {
 
     // Generate new token
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user.id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE || '7d' }
     );
@@ -222,7 +227,7 @@ router.put('/change-password', auth, async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.userId);
+    const user = await User.findByPk(req.userId);
     if (!user) {
       return res.status(404).json({
         success: false,

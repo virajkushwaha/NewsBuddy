@@ -9,7 +9,7 @@ const logger = require('../utils/logger');
 router.get('/', auth, async (req, res) => {
   try {
     const { limit = 20 } = req.query;
-    const user = await User.findById(req.userId);
+    const user = await User.findByPk(req.userId);
     
     if (!user) {
       return res.status(404).json({
@@ -83,9 +83,9 @@ router.post('/feedback', auth, async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.userId);
+    const user = await User.findByPk(req.userId);
     const Article = require('../models/Article');
-    const article = await Article.findById(articleId);
+    const article = await Article.findByPk(articleId);
 
     if (!user || !article) {
       return res.status(404).json({

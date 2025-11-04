@@ -33,6 +33,7 @@ const Sidebar = () => {
   ];
 
   const userItems = [
+    { text: 'For You', icon: <Person />, path: '/foryou' },
     { text: 'My Feed', icon: <Person />, path: '/personalized' },
     { text: 'Bookmarks', icon: <Bookmark />, path: '/bookmarks' },
     { text: 'Profile', icon: <Settings />, path: '/profile' },
@@ -52,7 +53,7 @@ const Sidebar = () => {
         '& .MuiDrawer-paper': {
           width: 240,
           boxSizing: 'border-box',
-          mt: 8,
+          position: 'relative',
           background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%)',
           borderRight: '1px solid rgba(0,0,0,0.08)',
         },

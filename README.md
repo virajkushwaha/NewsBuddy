@@ -222,4 +222,4 @@ MIT License - see LICENSE file for details.
 For issues and questions:
 - Create GitHub issue
 - Check troubleshooting section
-- Review logs for error details# NewsBuddy
+- Review logs for error details
