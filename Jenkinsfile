@@ -1,16 +1,9 @@
 pipeline {
-<<<<<<< HEAD
     agent any
-=======
-    agent {
-        docker { image 'node:18' }
-    }
 
     environment {
         CI = 'false' // Prevents create-react-app from treating builds as CI
     }
-
->>>>>>> ca82df3 (The complete and workable pipeline)
     stages {
         stage('Checkout') {
             steps {
