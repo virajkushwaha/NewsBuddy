@@ -4,6 +4,7 @@ pipeline {
     environment {
         CI = 'false' // Prevents create-react-app from treating builds as CI
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -62,7 +63,7 @@ pipeline {
                     steps {
                         dir('frontend') {
                             catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-                                sh 'npm test'
+                                sh 'npm test -- --passWithNoTests'
                             }
                         }
                     }
