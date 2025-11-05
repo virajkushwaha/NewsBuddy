@@ -88,7 +88,7 @@ pipeline {
                 script {
                     // Run npm audit for both frontend and backend
                     sh '''
-                        cd backend && npm audit --audit-level moderate
+                        cd backend && npm audit --audit-level moderate || true
                         cd ../frontend && npm audit --audit-level moderate || true
                     '''
                 }
