@@ -117,7 +117,7 @@ pipeline {
             stage('Build Backend Docker Image') {
                 steps {
                     script {
-                        def backendImage = 'newsbuddy-backend-image:${env.BUILD_TAG}'
+                        def backendImage = 'newsbuddy-backend-image:latest'
                         dir('backend') {
                             docker.build(backendImage, '.')
                         }
@@ -128,7 +128,7 @@ pipeline {
             stage('Build Frontend Docker Image') {
                 steps {
                     script{
-                        def frontendImage = "newsbuddy-frontend-image:${env.BUILD_TAG}"
+                        def frontendImage = "newsbuddy-frontend-image:latest"
                         dir('frontend') {
                             docker.build(frontendImage, '.')
                         }
