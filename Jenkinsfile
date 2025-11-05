@@ -89,8 +89,25 @@ pipeline {
                 }
             }
         }
-        
-        
+       
+       stage('Build') {
+		parallel {
+			stage('Backend Build') {
+				steps {
+					dir('backend') {
+						sh 'npm build'
+					}
+					
+				}
+				steps {
+					dir('frontend') {
+						sh 'npm build'
+					}
+				}
+			}
+
+		}
+       }
 
     }
     
