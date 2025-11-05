@@ -1,25 +1,30 @@
 pipeline {
     agent any
-    
+
     environment {
-        CI=false
+        CI = false
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
-                
-        	}
+                script {
+                    env.GIT_COMMIT_SHORT = sh(
+                        script: 'git rev-parse --short HEAD',
+                        returnStdout: true
+                    ).trim()
+                    env.BUILD_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
+                }
+            }
         }
-        
 
-        stage('Check Node Enviroment'){
-		steps{
-			sh 'node -v'
-			sh 'npm -v'
-		}
-	}
+        stage('Check Node Environment') {
+            steps {
+                sh 'node -v'
+                sh 'npm -v'
+            }
+        }
 
         stage('Install Dependencies') {
             parallel {
@@ -39,7 +44,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Run Tests') {
             parallel {
                 stage('Backend Tests') {
@@ -58,7 +63,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Code Quality') {
             parallel {
                 stage('Backend Lint') {
@@ -77,11 +82,10 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Security Scan') {
             steps {
                 script {
-                    // Run npm audit for both frontend and backend
                     sh '''
                         cd backend && npm audit --audit-level moderate || true
                         cd ../frontend && npm audit --audit-level moderate || true
@@ -89,27 +93,65 @@ pipeline {
                 }
             }
         }
-       
-       stage('Build') {
-		parallel {
-			stage('Backend Build') {
-				steps {
-					dir('backend') {
-						sh 'npm build'
-					}
-					
-				}
-				steps {
-					dir('frontend') {
-						sh 'npm build'
-					}
-				}
-			}
 
-		}
-       }
-
+        stage('Build') {
+            parallel {
+                stage('Backend Build') {
+                    steps {
+                        dir('backend') {
+                            sh 'npm run build'
+                        }
+                    }
+                }
+                stage('Frontend Build') {
+                    steps {
+                        dir('frontend') {
+                            sh 'npm run build'
+                        }
+                    }
+                }
+            }
+        }
     }
-    
 
+    post {
+        always {
+            sh '''
+                docker image prune -f
+                docker system prune -f
+            '''
+        }
+
+        success {
+            script {
+                if (env.BRANCH_NAME == 'main') {
+                    slackSend(
+                        channel: '#deployments',
+                        color: 'good',
+                        message: "✅ NewsBuddy deployment successful! Version: ${BUILD_TAG}"
+                    )
+                }
+            }
+        }
+
+        failure {
+            script {
+                slackSend(
+                    channel: '#deployments',
+                    color: 'danger',
+                    message: "❌ NewsBuddy deployment failed! Branch: ${env.BRANCH_NAME}, Build: ${env.BUILD_NUMBER}"
+                )
+            }
+        }
+
+        unstable {
+            script {
+                slackSend(
+                    channel: '#deployments',
+                    color: 'warning',
+                    message: "⚠️ NewsBuddy deployment unstable! Branch: ${env.BRANCH_NAME}, Build: ${env.BUILD_NUMBER}"
+                )
+            }
+        }
+    }
 }
