@@ -113,45 +113,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            sh '''
-                docker image prune -f
-                docker system prune -f
-            '''
-        }
-
-        success {
-            script {
-                if (env.BRANCH_NAME == 'main') {
-                    slackSend(
-                        channel: '#deployments',
-                        color: 'good',
-                        message: "✅ NewsBuddy deployment successful! Version: ${BUILD_TAG}"
-                    )
-                }
-            }
-        }
-
-        failure {
-            script {
-                slackSend(
-                    channel: '#deployments',
-                    color: 'danger',
-                    message: "❌ NewsBuddy deployment failed! Branch: ${env.BRANCH_NAME}, Build: ${env.BUILD_NUMBER}"
-                )
-            }
-        }
-
-        unstable {
-            script {
-                slackSend(
-                    channel: '#deployments',
-                    color: 'warning',
-                    message: "⚠️ NewsBuddy deployment unstable! Branch: ${env.BRANCH_NAME}, Build: ${env.BUILD_NUMBER}"
-                )
-            }
-        }
-    }
 }
