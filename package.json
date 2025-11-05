@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/virajkushwaha/NewsBuddy/issues"
   },
-  "homepage": "https://github.com/virajkushwaha/NewsBuddy#readme"
+  "homepage": "https://github.com/virajkushwaha/NewsBuddy#readme",
+  "dependencies": {
+    "validator": "^13.15.20"
+  }
 }
