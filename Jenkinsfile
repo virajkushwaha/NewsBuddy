@@ -112,5 +112,29 @@ pipeline {
                 }
             }
         }
+	stage('Build Docker Images') {
+        parallel {
+            stage('Build Backend Docker Image') {
+                steps {
+                    script {
+                        def backendImage = 'newsbuddy-backend-image:${env.BUILD_TAG}'
+                        dir('backend') {
+                            docker.build(backendImage, '.')
+                        }
+                    }
+                    
+                }
+            }
+            stage('Build Frontend Docker Image') {
+                steps {
+                    def frontendImage = "newsbuddy-frontend-image:${env.BUILD_TAG}"
+                    dir('frontend') {
+                        docker.build(frontendImage, '.')
+                    }
+                }
+            }
+        }
+	
+	}
     }
 }
