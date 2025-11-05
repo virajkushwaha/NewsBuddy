@@ -9,15 +9,10 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                script {
-                    env.GIT_COMMIT_SHORT = sh(
-                        script: 'git rev-parse --short HEAD',
-                        returnStdout: true
-                    ).trim()
-                    env.BUILD_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
-                }
-            }
+                
+        	}
         }
+        
 
         stage('Check Node Enviroment'){
 		steps{
@@ -99,45 +94,5 @@ pipeline {
 
     }
     
-    post {
-        always {
-            // Clean up Docker images
-            sh '''
-                docker image prune -f
-                docker system prune -f
-            '''
-        }
-        
-        success {
-            script {
-                if (env.BRANCH_NAME == 'main') {
-                    slackSend(
-                        channel: '#deployments',
-                        color: 'good',
-                        message: "✅ NewsBuddy deployment successful! Version: ${BUILD_TAG}"
-                    )
-                }
-            }
-        }
-        
-        failure {
-            script {
-                slackSend(
-                    channel: '#deployments',
-                    color: 'danger',
-                    message: "❌ NewsBuddy deployment failed! Branch: ${env.BRANCH_NAME}, Build: ${env.BUILD_NUMBER}"
-                )
-            }
-        }
-        
-        unstable {
-            script {
-                slackSend(
-                    channel: '#deployments',
-                    color: 'warning',
-                    message: "⚠️ NewsBuddy deployment unstable! Branch: ${env.BRANCH_NAME}, Build: ${env.BUILD_NUMBER}"
-                )
-            }
-        }
-    }
+
 }
