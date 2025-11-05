@@ -127,9 +127,11 @@ pipeline {
             }
             stage('Build Frontend Docker Image') {
                 steps {
-                    def frontendImage = "newsbuddy-frontend-image:${env.BUILD_TAG}"
-                    dir('frontend') {
-                        docker.build(frontendImage, '.')
+                    script{
+                        def frontendImage = "newsbuddy-frontend-image:${env.BUILD_TAG}"
+                        dir('frontend') {
+                            docker.build(frontendImage, '.')
+                        }
                     }
                 }
             }
