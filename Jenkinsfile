@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         CI = false
-        IMAGE_TAG = "${env.BUILD_NUMBER"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
     stages {
@@ -12,6 +12,7 @@ pipeline {
                 deleteDir()
             }
         }
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -111,41 +112,58 @@ pipeline {
                 }
             }
         }
-	    stage('Build Docker Images') {
+
+        stage('Build Docker Images') {
             parallel {
                 stage('Build Backend Docker Image') {
                     steps {
                         script {
-                            def backendImage = "newsbuddy-backend-image:${IMAGE_TAG}"
+                            def backendImage = "newsbuddy-backend-image"
                             dir('backend') {
-                                docker.build(backendImage, '.')
+                                docker.build(backendImage)
                             }
                         }
-                    
                     }
-                }   
+                }
                 stage('Build Frontend Docker Image') {
                     steps {
-                        script{
-                            def frontendImage = "newsbuddy-frontend-image:${IMAGE_TAG}"
+                        script {
+                            def frontendImage = "newsbuddy-frontend-image"
                             dir('frontend') {
-                                docker.build(frontendImage, '.')
+                                docker.build(frontendImage)
                             }
                         }
                     }
                 }
             }
-	    }
+        }
+
         stage('Push Images') {
             parallel {
                 stage('Push Backend Image') {
                     steps {
                         script {
-                            def backendImage = "newsbuddy-backend-image:${IMAGE_TAG}"
-                            def dockerhubRepo = "virajkushwaha/${backendImage}"
-                            withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                                sh "docker login -u $DOCKER_USER -p $DOCKER_PASS"
-                                sh "docker tag ${backendImage}:latest ${dockerHubRepo}:${env.IMAGE_TAG}"
+                            def imageName = "newsbuddy-backend-image"
+                            def dockerHubRepo = "virajkushwaha/${imageName}"
+
+                            withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                                sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                                sh "docker tag ${imageName}:latest ${dockerHubRepo}:${env.IMAGE_TAG}"
+                                sh "docker push ${dockerHubRepo}:${env.IMAGE_TAG}"
+                            }
+                        }
+                    }
+                }
+
+                stage('Push Frontend Image') {
+                    steps {
+                        script {
+                            def imageName = "newsbuddy-frontend-image"
+                            def dockerHubRepo = "virajkushwaha/${imageName}"
+
+                            withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                                sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                                sh "docker tag ${imageName}:latest ${dockerHubRepo}:${env.IMAGE_TAG}"
                                 sh "docker push ${dockerHubRepo}:${env.IMAGE_TAG}"
                             }
                         }
