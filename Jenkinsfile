@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         CI = false
+        IMAGE_TAG = '${env.BUILD_NUMBER}'
     }
 
     stages {
@@ -115,7 +116,7 @@ pipeline {
                 stage('Build Backend Docker Image') {
                     steps {
                         script {
-                            def backendImage = 'newsbuddy-backend-image:latest'
+                            def backendImage = 'newsbuddy-backend-image:${IMAGE_TAG}'
                             dir('backend') {
                                 docker.build(backendImage, '.')
                             }
@@ -126,7 +127,7 @@ pipeline {
                 stage('Build Frontend Docker Image') {
                     steps {
                         script{
-                            def frontendImage = "newsbuddy-frontend-image:latest"
+                            def frontendImage = "newsbuddy-frontend-image:${IMAGE_TAG}"
                             dir('frontend') {
                                 docker.build(frontendImage, '.')
                             }
@@ -135,5 +136,22 @@ pipeline {
                 }
             }
 	    }
+        stage('Push Images') {
+            parallel {
+                stage('Push Backend Image') {
+                    steps {
+                        script {
+                            def backendImage = 'newsbuddy-backend-image:${IMAGE_TAG}'
+                            def dockerhubRepo = 'virajkushwaha/${backendImage}'
+                            withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                                sh "docker login -u $DOCKER_USER -p $DOCKER_PASS"
+                                sh "docker tag ${backendImage}:latest ${dockerHubRepo}:${env.IMAGE_TAG}"
+                                sh "docker push ${dockerHubRepo}:${env.IMAGE_TAG}"
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
