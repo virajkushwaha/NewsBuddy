@@ -110,31 +110,30 @@ pipeline {
                 }
             }
         }
-	stage('Build Docker Images') {
-        parallel {
-            stage('Build Backend Docker Image') {
-                steps {
-                    script {
-                        def backendImage = 'newsbuddy-backend-image:latest'
-                        dir('backend') {
-                            docker.build(backendImage, '.')
+	    stage('Build Docker Images') {
+            parallel {
+                stage('Build Backend Docker Image') {
+                    steps {
+                        script {
+                            def backendImage = 'newsbuddy-backend-image:latest'
+                            dir('backend') {
+                                docker.build(backendImage, '.')
+                            }
                         }
-                    }
                     
-                }
-            }
-            stage('Build Frontend Docker Image') {
-                steps {
-                    script{
-                        def frontendImage = "newsbuddy-frontend-image:latest"
-                        dir('frontend') {
-                            docker.build(frontendImage, '.')
+                    }
+                }   
+                stage('Build Frontend Docker Image') {
+                    steps {
+                        script{
+                            def frontendImage = "newsbuddy-frontend-image:latest"
+                            dir('frontend') {
+                                docker.build(frontendImage, '.')
+                            }
                         }
                     }
                 }
             }
-        }
-	
-	}
+	    }
     }
 }
