@@ -171,5 +171,14 @@ pipeline {
                 }
             }
         }
+        stage('Deploy to Kind') {
+            steps {
+                script {
+                    sh "kind load docker-image newsbuddy-backend-image:${env.IMAGE_TAG}"
+                    sh "kind load docker-image newsbuddy-frontend-image:${env.IMAGE_TAG}"
+                    sh "kubectl apply -f k8s/"
+                }
+            }
+        }
     }
 }
