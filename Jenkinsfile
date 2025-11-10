@@ -4,6 +4,7 @@ pipeline {
     environment {
         CI = false
         IMAGE_TAG = "${env.BUILD_NUMBER}"
+        KUBECONFIG = '/var/jenkins_home/.kube/config'
     }
 
     stages {
