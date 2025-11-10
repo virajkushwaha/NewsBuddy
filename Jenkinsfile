@@ -174,9 +174,15 @@ pipeline {
         stage('Deploy to Kind') {
             steps {
                 script {
-                    sh "kind load docker-image newsbuddy-backend-image:${env.IMAGE_TAG}"
-                    sh "kind load docker-image newsbuddy-frontend-image:${env.IMAGE_TAG}"
-                    sh "kubectl apply -f k8s/"
+                    sh """
+                        sed -i 's|newsbuddy-backend-image:latest|virajkushwaha/newsbuddy-backend-image:${IMAGE_TAG}|' k8s/backend-deployment.yaml
+                        sed -i 's|newsbuddy-frontend-image:latest|virajkushwaha/newsbuddy-frontend-image:${IMAGE_TAG}|' k8s/frontend-deployment.yaml
+                    """
+
+                    sh "kubectl apply -f k8s/backend-deployment.yaml"
+                    sh "kubectl apply -f k8s/frontend-deployment.yaml"
+                    sh "kubectl get pods -n newsbuddy-production"
+                    sh "kubectl get svc -n newsbuddy-production"
                 }
             }
         }
