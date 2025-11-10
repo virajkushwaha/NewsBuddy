@@ -179,7 +179,7 @@ pipeline {
                         sed -i 's|newsbuddy-backend-image:latest|virajkushwaha/newsbuddy-backend-image:${IMAGE_TAG}|' k8s/backend-deployment.yaml
                         sed -i 's|newsbuddy-frontend-image:latest|virajkushwaha/newsbuddy-frontend-image:${IMAGE_TAG}|' k8s/frontend-deployment.yaml
                     """
-
+                    sh "kubectl get namespace newsbuddy-production || kubectl create namespace newsbuddy-production"
                     sh "kubectl apply -f k8s/backend-deployment.yaml"
                     sh "kubectl apply -f k8s/frontend-deployment.yaml"
                     sh "kubectl apply -f k8s/secrets.yaml"
