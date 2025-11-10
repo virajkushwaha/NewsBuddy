@@ -182,6 +182,10 @@ pipeline {
                     sh "kubectl get namespace newsbuddy-production || kubectl create namespace newsbuddy-production"
                     sh "kubectl apply -f k8s/backend-deployment.yaml"
                     sh "kubectl apply -f k8s/frontend-deployment.yaml"
+
+                    sh "kubectl get namspace newsbuddy-staging || kubectl create namespace newsbuddy-staging"
+                    sh "kubectl get namspace newsbuddy-development || kubectl create namespace newsbuddy-development"
+
                     sh "kubectl apply -f k8s/secrets.yaml"
 
                     sh "kubectl apply -f k8s/configmap.yaml"
