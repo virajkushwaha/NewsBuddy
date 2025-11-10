@@ -182,6 +182,12 @@ pipeline {
 
                     sh "kubectl apply -f k8s/backend-deployment.yaml"
                     sh "kubectl apply -f k8s/frontend-deployment.yaml"
+                    sh "kubectl apply -f k8s/secrets.yaml"
+
+                    sh "kubectl apply -f k8s/configmap.yaml"
+
+                    sh "kubectl apply -f k8s/ingress.yaml"
+
                     sh "kubectl get pods -n newsbuddy-production"
                     sh "kubectl get svc -n newsbuddy-production"
                 }
