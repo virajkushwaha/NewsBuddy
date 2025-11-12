@@ -10,9 +10,7 @@ pipeline {
         FRONTEND_IMAGE = 'newsbuddy-frontend'
     }
 
-    tools {
-        nodejs '18'
-    }
+
 
     stages {
         stage('Clean Workspace') {
@@ -29,10 +27,18 @@ pipeline {
 
         stage('Check Environment') {
             steps {
-                sh 'node -v'
-                sh 'npm -v'
-                sh 'docker --version'
-                sh 'kubectl version --client'
+                sh '''
+                    # Install Node.js if not available
+                    if ! command -v node &> /dev/null; then
+                        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+                        apt-get install -y nodejs
+                    fi
+                    
+                    node -v
+                    npm -v
+                    docker --version
+                    kubectl version --client
+                '''
             }
         }
 
