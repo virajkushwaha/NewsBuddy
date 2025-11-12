@@ -86,8 +86,7 @@ pipeline {
                                 npm test -- --coverage --ci --watchAll=false --passWithNoTests --testResultsProcessor=jest-junit
                             '''
                         }
-                        publishTestResults testResultsPattern: 'backend/junit.xml'
-                        publishCoverage adapters: [istanbulCoberturaAdapter('backend/coverage/cobertura-coverage.xml')], sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
+                        archiveArtifacts artifacts: 'backend/coverage/**, backend/junit.xml', allowEmptyArchive: true
                     }
                 }
                 stage('Frontend Tests') {
@@ -103,8 +102,7 @@ pipeline {
                                 CI=true npm test -- --coverage --ci --watchAll=false --passWithNoTests --testResultsProcessor=jest-junit
                             '''
                         }
-                        publishTestResults testResultsPattern: 'frontend/junit.xml'
-                        publishCoverage adapters: [istanbulCoberturaAdapter('frontend/coverage/cobertura-coverage.xml')], sourceFileResolver: sourceFiles('STORE_LAST_BUILD')
+                        archiveArtifacts artifacts: 'frontend/coverage/**, frontend/junit.xml', allowEmptyArchive: true
                     }
                 }
             }
@@ -142,7 +140,7 @@ EOF
                                 npm run lint || true
                             '''
                         }
-                        recordIssues enabledForFailure: true, tools: [esLint(pattern: 'backend/eslint-results.xml')]
+                        archiveArtifacts artifacts: 'backend/eslint-results.xml', allowEmptyArchive: true
                     }
                 }
                 stage('Frontend Lint & Quality') {
@@ -156,7 +154,7 @@ EOF
                                 npm run lint || true
                             '''
                         }
-                        recordIssues enabledForFailure: true, tools: [esLint(pattern: 'frontend/eslint-results.xml')]
+                        archiveArtifacts artifacts: 'frontend/eslint-results.xml', allowEmptyArchive: true
                     }
                 }
                 stage('Security Vulnerability Scan') {
