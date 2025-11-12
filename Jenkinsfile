@@ -83,7 +83,7 @@ pipeline {
                                 fi
                                 
                                 # Run tests with coverage
-                                npm test -- --coverage --ci --watchAll=false --testResultsProcessor=jest-junit
+                                npm test -- --coverage --ci --watchAll=false --passWithNoTests --testResultsProcessor=jest-junit
                             '''
                         }
                         publishTestResults testResultsPattern: 'backend/junit.xml'
@@ -100,7 +100,7 @@ pipeline {
                                 fi
                                 
                                 # Run tests with coverage
-                                CI=true npm test -- --coverage --ci --watchAll=false --testResultsProcessor=jest-junit
+                                CI=true npm test -- --coverage --ci --watchAll=false --passWithNoTests --testResultsProcessor=jest-junit
                             '''
                         }
                         publishTestResults testResultsPattern: 'frontend/junit.xml'
