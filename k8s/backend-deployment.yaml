@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: newsbuddy-backend
-        image: virajkushwaha/newsbuddy-backend-image:16
+        image: virajkushwaha/newsbuddy-backend:latest
         ports:
         - containerPort: 5000
         env:
