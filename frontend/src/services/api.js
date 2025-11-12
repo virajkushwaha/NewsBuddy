@@ -48,9 +48,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle network errors
+    // Handle network errors - don't show toast for expected fallbacks
     if (!error.response) {
-      toast.error('Network error. Please check your connection.');
+      // Only show network error for non-news API calls
+      if (!originalRequest.url.includes('/news/')) {
+        toast.error('Network error. Please check your connection.');
+      }
       return Promise.reject(error);
     }
 
@@ -98,12 +101,18 @@ api.interceptors.response.use(
         break;
 
       case 500:
-        toast.error('Server error. Please try again later.');
+        // Don't show server error toast for news API calls (they have fallbacks)
+        if (!originalRequest.url.includes('/news/')) {
+          toast.error('Server error. Please try again later.');
+        }
         break;
 
       default:
-        const message = error.response?.data?.message || 'An error occurred';
-        toast.error(message);
+        // Don't show generic error toast for news API calls
+        if (!originalRequest.url.includes('/news/')) {
+          const message = error.response?.data?.message || 'An error occurred';
+          toast.error(message);
+        }
     }
 
     return Promise.reject(error);

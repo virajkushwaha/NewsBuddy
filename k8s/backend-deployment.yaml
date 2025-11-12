@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: newsbuddy-backend
-  namespace: default
+  namespace: newsbuddy-production
   labels:
     app: newsbuddy-backend
     environment: production
@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: newsbuddy-backend
-        image: YOUR_ECR_REGISTRY/newsbuddy-backend:latest
+        image: virajkushwaha/newsbuddy-backend-image:16
         ports:
         - containerPort: 5000
         env:
@@ -58,8 +58,7 @@ spec:
       volumes:
       - name: logs
         emptyDir: {}
-      imagePullSecrets:
-      - name: ecr-registry-secret
+      
 ---
 apiVersion: v1
 kind: Service

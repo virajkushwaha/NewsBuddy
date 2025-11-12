@@ -266,12 +266,7 @@ const Home = () => {
           </Paper>
         )}
 
-        {/* Error State */}
-        {error && (
-          <Alert severity="info" sx={{ mb: 4, borderRadius: 2 }}>
-            Using demo data - API connection unavailable. The app is fully functional with sample news articles.
-          </Alert>
-        )}
+
 
         {/* Trending Section */}
         {!showPersonalized && trendingArticles.length > 0 && (

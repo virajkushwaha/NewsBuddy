@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: newsbuddy-config
-  namespace: default
+  namespace: newsbuddy-production
 data:
   NODE_ENV: "production"
   AWS_REGION: "us-east-1"
