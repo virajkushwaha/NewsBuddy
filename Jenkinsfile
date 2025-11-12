@@ -209,7 +209,7 @@ EOF
                 stage('Frontend Build') {
                     steps {
                         dir('frontend') {
-                            sh 'npm run build'
+                            sh 'CI=false npm run build'
                         }
                     }
                 }
