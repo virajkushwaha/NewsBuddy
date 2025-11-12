@@ -259,6 +259,7 @@ EOF
         stage('Push Images') {
             when {
                 anyOf {
+                    branch 'DeploytoKindLocally'
                     branch 'main'
                     branch 'develop'
                     branch 'staging'
@@ -282,6 +283,7 @@ EOF
         stage('Deploy to Kubernetes') {
             when {
                 anyOf {
+                    branch 'DeploytoKindLocally'
                     branch 'main'
                     branch 'develop'
                     branch 'staging'
@@ -328,6 +330,7 @@ EOF
         stage('Integration & Performance Tests') {
             when {
                 anyOf {
+                    branch 'DeploytoKindLocally'
                     branch 'main'
                     branch 'develop'
                     branch 'staging'
