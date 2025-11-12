@@ -79,15 +79,15 @@ const PreferencesPanel = ({
 
   return (
     <Box>
-      <Typography variant=\"h6\" gutterBottom>
+      <Typography variant="h6" gutterBottom>
         News Preferences
       </Typography>
       
       <Box mb={3}>
-        <Typography variant=\"subtitle1\" gutterBottom>
+        <Typography variant="subtitle1" gutterBottom>
           Preferred Categories
         </Typography>
-        <Box display=\"flex\" flexWrap=\"wrap\" gap={1}>
+        <Box display="flex" flexWrap="wrap" gap={1}>
           {categories.map(category => (
             <Chip
               key={category}
@@ -101,7 +101,7 @@ const PreferencesPanel = ({
       </Box>
 
       <Box mb={3}>
-        <Typography variant=\"subtitle1\" gutterBottom>
+        <Typography variant="subtitle1" gutterBottom>
           Keywords
         </Typography>
         <Autocomplete
@@ -117,18 +117,18 @@ const PreferencesPanel = ({
           renderInput={(params) => (
             <TextField
               {...params}
-              label=\"Add keywords\"
-              placeholder=\"Type and press Enter\"
+              label="Add keywords"
+              placeholder="Type and press Enter"
             />
           )}
         />
-        <Box mt={1} display=\"flex\" flexWrap=\"wrap\" gap={1}>
+        <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
           {localPreferences.keywords.map(keyword => (
             <Chip
               key={keyword}
               label={keyword}
               onDelete={() => handleKeywordRemove(keyword)}
-              color=\"primary\"
+              color="primary"
             />
           ))}
         </Box>
@@ -170,7 +170,7 @@ const PreferencesPanel = ({
       {showSaveButton && (
         <Box mt={3}>
           <Button
-            variant=\"contained\"
+            variant="contained"
             startIcon={<Save />}
             onClick={handleSave}
             disabled={saving}
