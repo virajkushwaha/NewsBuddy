@@ -47,16 +47,24 @@ pipeline {
                 stage('Backend Dependencies') {
                     steps {
                         dir('backend') {
-                            sh 'npm ci --only=production'
-                            sh 'npm install --save-dev jest supertest eslint'
+                            sh '''
+                                # Clean install with updated lock file
+                                rm -f package-lock.json
+                                npm install
+                                npm install --save-dev jest supertest eslint jest-junit
+                            '''
                         }
                     }
                 }
                 stage('Frontend Dependencies') {
                     steps {
                         dir('frontend') {
-                            sh 'npm ci --only=production'
-                            sh 'npm install --save-dev @testing-library/react @testing-library/jest-dom eslint'
+                            sh '''
+                                # Clean install with updated lock file
+                                rm -f package-lock.json
+                                npm install
+                                npm install --save-dev @testing-library/react @testing-library/jest-dom eslint jest-junit
+                            '''
                         }
                     }
                 }
