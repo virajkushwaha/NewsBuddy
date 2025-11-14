@@ -31,10 +31,17 @@ RUN groupadd -r nodeuser && useradd -r -g nodeuser nodeuser
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production \
+    && npm cache clean --force
 
-# Copy application code
-COPY . .
+# Copy application code (excluding node_modules)
+COPY --chown=nodeuser:nodeuser . .
+
+# Remove any existing node_modules and do fresh install
+RUN rm -rf node_modules package-lock.json \
+    && npm install --only=production \
+    && npm rebuild sqlite3 --build-from-source \
+    && npm cache clean --force
 
 # Create logs directory
 RUN mkdir -p logs && chown -R nodeuser:nodeuser /app

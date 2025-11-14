@@ -299,8 +299,24 @@ EOF
                     }
                     
                     sh """
+                        # Install Kind and kubectl in Jenkins container
+                        if ! command -v kind &> /dev/null; then
+                            curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+                            chmod +x ./kind && mv ./kind /usr/local/bin/kind
+                        fi
+                        
+                        if ! command -v kubectl &> /dev/null; then
+                            curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+                            chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
+                        fi
+                        
+                        # Create Kind cluster if not exists
+                        if ! kind get clusters | grep -q newsbuddy; then
+                            kind create cluster --name newsbuddy
+                        fi
+                        
                         # Create namespaces
-                        kubectl apply -f k8s/namespace.yaml
+                        kubectl apply -f k8s/namespace.yaml --validate=false
                         
                         # Apply secrets and configmaps
                         kubectl apply -f k8s/secrets.yaml
