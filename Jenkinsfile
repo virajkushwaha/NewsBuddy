@@ -318,6 +318,9 @@ EOF
                         # Create namespaces
                         kubectl apply -f k8s/namespace.yaml --validate=false
                         
+                        # Deploy MongoDB first
+                        kubectl apply -f k8s/mongodb.yaml --validate=false
+                        
                         # Apply secrets and configmaps
                         kubectl apply -f k8s/secrets.yaml --validate=false
                         kubectl apply -f k8s/configmap.yaml --validate=false
@@ -331,9 +334,16 @@ EOF
                         kubectl apply -f k8s/frontend-deployment.yaml --validate=false
                         kubectl apply -f k8s/ingress.yaml --validate=false
                         
-                        # Wait for rollout
+                        # Wait for rollout with debugging
                         kubectl rollout status deployment/newsbuddy-backend -n ${namespace} --timeout=300s
-                        kubectl rollout status deployment/newsbuddy-frontend -n ${namespace} --timeout=300s
+                        echo "Backend deployment status:"
+                        kubectl get pods -n ${namespace} -l app=newsbuddy-backend
+                        
+                        kubectl rollout status deployment/newsbuddy-frontend -n ${namespace} --timeout=600s || {
+                            echo "Frontend deployment failed, checking pods:"
+                            kubectl get pods -n ${namespace} -l app=newsbuddy-frontend
+                            kubectl describe pods -n ${namespace} -l app=newsbuddy-frontend
+                        }
                         
                         # Show status
                         kubectl get pods -n ${namespace}
