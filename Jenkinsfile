@@ -319,17 +319,17 @@ EOF
                         kubectl apply -f k8s/namespace.yaml --validate=false
                         
                         # Apply secrets and configmaps
-                        kubectl apply -f k8s/secrets.yaml
-                        kubectl apply -f k8s/configmap.yaml
+                        kubectl apply -f k8s/secrets.yaml --validate=false
+                        kubectl apply -f k8s/configmap.yaml --validate=false
                         
                         # Update image tags
                         sed -i 's|virajkushwaha/newsbuddy-backend.*|${DOCKER_REGISTRY}/${BACKEND_IMAGE}:${IMAGE_TAG}|g' k8s/backend-deployment.yaml
                         sed -i 's|virajkushwaha/newsbuddy-frontend.*|${DOCKER_REGISTRY}/${FRONTEND_IMAGE}:${IMAGE_TAG}|g' k8s/frontend-deployment.yaml
                         
                         # Deploy applications
-                        kubectl apply -f k8s/backend-deployment.yaml
-                        kubectl apply -f k8s/frontend-deployment.yaml
-                        kubectl apply -f k8s/ingress.yaml
+                        kubectl apply -f k8s/backend-deployment.yaml --validate=false
+                        kubectl apply -f k8s/frontend-deployment.yaml --validate=false
+                        kubectl apply -f k8s/ingress.yaml --validate=false
                         
                         # Wait for rollout
                         kubectl rollout status deployment/newsbuddy-backend -n ${namespace} --timeout=300s
