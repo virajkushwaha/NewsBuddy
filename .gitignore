@@ -127,3 +127,5 @@ temp/
 # Secrets
 secrets/
 *.secret
+
+mini*
