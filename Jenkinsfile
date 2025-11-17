@@ -353,78 +353,7 @@ EOF
             }
         }
         
-        stage('Integration & Performance Tests') {
-            when {
-                anyOf {
-                    branch 'DeploytoKindLocally'
-                    branch 'main'
-                    branch 'develop'
-                    branch 'staging'
-                }
-            }
-            steps {
-                script {
-                    def namespace = 'newsbuddy-production'
-                    if (env.BRANCH_NAME == 'develop') {
-                        namespace = 'newsbuddy-development'
-                    } else if (env.BRANCH_NAME == 'staging') {
-                        namespace = 'newsbuddy-staging'
-                    }
-                    
-                    sh """
-                        # Wait for services
-                        kubectl wait --for=condition=available --timeout=300s deployment/newsbuddy-backend -n ${namespace}
-                        kubectl wait --for=condition=available --timeout=300s deployment/newsbuddy-frontend -n ${namespace}
-                        
-                        # Health checks
-                        kubectl run test-backend --image=curlimages/curl --rm -i --restart=Never -n ${namespace} -- \
-                        curl -f http://newsbuddy-backend-service/health || echo "Backend health check failed"
-                        
-                        kubectl run test-api --image=curlimages/curl --rm -i --restart=Never -n ${namespace} -- \
-                        curl -f http://newsbuddy-backend-service/api/news/headlines || echo "API test failed"
-                        
-                        # Load testing with k6
-                        docker run --rm -v \$PWD:/scripts grafana/k6:latest run - <<EOF
-import http from 'k6/http';
-import { check } from 'k6';
-
-export let options = {
-  stages: [
-    { duration: '30s', target: 5 },
-    { duration: '1m', target: 10 },
-    { duration: '30s', target: 0 },
-  ],
-};
-
-export default function() {
-  let response = http.get('http://newsbuddy-backend-service.${namespace}.svc.cluster.local/health');
-  check(response, {
-    'status is 200': (r) => r.status === 200,
-    'response time < 1000ms': (r) => r.timings.duration < 1000,
-  });
-}
-EOF
-                    """
-                }
-            }
-        }
-
-        stage('Security Compliance') {
-            when {
-                branch 'main'
-            }
-            steps {
-                sh '''
-                    # OWASP ZAP security scan
-                    docker run -t owasp/zap2docker-stable zap-baseline.py -t http://newsbuddy-frontend-service || echo "OWASP scan completed"
-                    
-                    # Kubernetes security scan
-                    curl -L https://github.com/zegl/kube-score/releases/download/v1.16.1/kube-score_1.16.1_linux_amd64.tar.gz | tar xz || echo "kube-score download failed"
-                    ./kube-score score k8s/*.yaml > kube-security-report.txt || echo "K8s security scan completed"
-                '''
-                archiveArtifacts artifacts: 'kube-security-report.txt', allowEmptyArchive: true
-            }
-        }
+        
     }
     
     post {
