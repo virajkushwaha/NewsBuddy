@@ -128,4 +128,4 @@ temp/
 secrets/
 *.secret
 
-mini*
+minikube-linux-amd64
