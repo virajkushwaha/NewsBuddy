@@ -129,3 +129,4 @@ secrets/
 *.secret
 
 minikube-linux-amd64
+k8s/minikube-linux-amd64
