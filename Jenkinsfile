@@ -116,22 +116,22 @@ pipeline {
                             sh '''
                                 # Setup ESLint config
                                 cat > .eslintrc.json << 'EOF'
-{
-  "extends": ["eslint:recommended"],
-  "env": {
-    "node": true,
-    "es2021": true
-  },
-  "parserOptions": {
-    "ecmaVersion": 12,
-    "sourceType": "module"
-  },
-  "rules": {
-    "no-unused-vars": "warn",
-    "no-console": "off"
-  }
-}
-EOF
+                                {
+                                "extends": ["eslint:recommended"],
+                                "env": {
+                                    "node": true,
+                                    "es2021": true
+                                },
+                                "parserOptions": {
+                                    "ecmaVersion": 12,
+                                    "sourceType": "module"
+                                },
+                                "rules": {
+                                    "no-unused-vars": "warn",
+                                    "no-console": "off"
+                                }
+                                }
+                                EOF
                                 
                                 # Add lint script
                                 npm pkg set scripts.lint="eslint . --ext .js --format checkstyle --output-file eslint-results.xml"
@@ -353,27 +353,10 @@ EOF
             }
         }
         
-        
+
     }
     
     post {
-        always {
-            // Archive all reports
-            archiveArtifacts artifacts: '''
-                **/coverage/**, 
-                **/eslint-results.xml, 
-                **/npm-audit-*.json, 
-                **/semgrep-results.json, 
-                **/trufflehog-results.json, 
-                **/*-image-scan.json,
-                **/kube-security-report.txt,
-                **/logs/*.log
-            ''', allowEmptyArchive: true
-            
-            // Clean Docker
-            sh 'docker image prune -f || true'
-            sh 'docker system prune -f || true'
-        }
         
         success {
             echo '✅ Pipeline completed successfully!'
