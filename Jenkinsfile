@@ -315,6 +315,9 @@ pipeline {
                             kind create cluster --name newsbuddy
                         fi
                         
+                        # Set kubectl context to Kind cluster
+                        kubectl config use-context kind-newsbuddy
+                        
                         # Create namespaces
                         kubectl apply -f k8s/namespace.yaml --validate=false
                         
