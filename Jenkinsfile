@@ -375,8 +375,6 @@ pipeline {
             sh 'kubectl get events --sort-by=.metadata.creationTimestamp || true'
         }
         
-        cleanup {
-            cleanWs()
-        }
+        
     }
 }
