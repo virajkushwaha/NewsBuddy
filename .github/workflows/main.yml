@@ -1,0 +1,50 @@
+name: Newbuddy Workflow
+
+on:push:
+  branches:
+    - Github-Action
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      -name: Checkout code
+       uses: actions/checkout@v5
+      
+      -name: Installing dependencies
+       run: |
+         sudo apt-get update
+         sudo apt-get install -y curl
+         cd /Newbuddy/frontend
+         npm install
+         cd /Newbuddy/backend
+         npm install
+      -name: Build
+       run: |
+         cd /Newbuddy/frontend
+         npm run build
+         cd /Newbuddy/backend
+         npm run build
+      
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      -name: Checkout code
+       uses: actions/checkout@v5
+      
+      -name: Installing dependencies
+       run: |
+         sudo apt-get update
+         sudo apt-get install -y curl
+         cd /Newbuddy/frontend
+         npm install
+         cd /Newbuddy/backend
+         npm install
+      -name: Test
+       run: |
+         cd /Newbuddy/frontend
+         npm run test
+         cd /Newbuddy/backend
+         npm run test
