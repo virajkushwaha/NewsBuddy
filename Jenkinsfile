@@ -280,11 +280,35 @@ pipeline {
             }
         }
 
+        stage('Deploy to AWS') {
+            when {
+                anyOf {
+                    branch 'awsdeplomentbypythonscript'
+                    branch 'main'
+                }
+            }
+            steps {
+                script {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        sh '''
+                            pip3 install boto3
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                            export AWS_DEFAULT_REGION=us-east-1
+                            python3 aws/deploy_aws.py
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             when {
                 anyOf {
                     branch 'DeploytoKindLocally'
-                    branch 'main'
                     branch 'develop'
                     branch 'staging'
                 }
