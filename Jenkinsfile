@@ -259,6 +259,7 @@ pipeline {
         stage('Push Images') {
             when {
                 anyOf {
+                    branch 'awsdeplomentbypythonscript'
                     branch 'DeploytoKindLocally'
                     branch 'main'
                     branch 'develop'
