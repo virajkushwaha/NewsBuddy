@@ -94,13 +94,13 @@ REACT_APP_API_URL=http://localhost:5000/api
 REACT_APP_WS_URL=ws://localhost:5000
 EOF
 
-# Create docker-compose override for port 22
+# Create docker-compose override for port 80
 cat > docker-compose.override.yml << EOF
 version: '3.8'
 services:
   frontend:
     ports:
-      - "22:80"
+      - "80:80"
   backend:
     ports:
       - "5000:5000"
@@ -177,10 +177,14 @@ def create_alb(sg_id, instance_id):
     tg_response = elbv2.create_target_group(
         Name='newsbuddy-tg',
         Protocol='HTTP',
-        Port=22,
+        Port=80,
         VpcId=vpc_id,
         TargetType='instance',
-        HealthCheckPath='/health'
+        HealthCheckPath='/',
+        HealthCheckIntervalSeconds=30,
+        HealthCheckTimeoutSeconds=5,
+        HealthyThresholdCount=2,
+        UnhealthyThresholdCount=3
     )
     
     tg_arn = tg_response['TargetGroups'][0]['TargetGroupArn']
@@ -188,7 +192,7 @@ def create_alb(sg_id, instance_id):
     # Register instance
     elbv2.register_targets(
         TargetGroupArn=tg_arn,
-        Targets=[{'Id': instance_id, 'Port': 22}]
+        Targets=[{'Id': instance_id, 'Port': 80}]
     )
     
     # Create listener
