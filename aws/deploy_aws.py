@@ -2,10 +2,12 @@
 import boto3
 import base64
 import json
+import os
 
-# AWS clients
-ec2 = boto3.client('ec2')
-elbv2 = boto3.client('elbv2')
+# AWS clients with explicit region
+region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+ec2 = boto3.client('ec2', region_name=region)
+elbv2 = boto3.client('elbv2', region_name=region)
 
 def create_key_pair():
     try:
