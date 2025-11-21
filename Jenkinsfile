@@ -44,7 +44,7 @@ pipeline {
                     fi
                     
                     # Install AWS dependencies
-                    pip3 install boto3 awscli
+                    pip3 install boto3 awscli --break-system-packages || apt-get install -y python3-boto3 python3-botocore
                     
                     node -v
                     npm -v
@@ -191,7 +191,7 @@ pipeline {
                     steps {
                         sh '''
                             # Install Semgrep
-                            python3 -m pip install semgrep || echo "Semgrep installation failed"
+                            python3 -m pip install semgrep --break-system-packages || echo "Semgrep installation failed"
                             
                             # Run SAST scan
                             semgrep --config=auto --json --output=semgrep-results.json . || echo "SAST scan completed"
