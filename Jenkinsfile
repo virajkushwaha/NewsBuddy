@@ -34,10 +34,24 @@ pipeline {
                         apt-get install -y nodejs
                     fi
                     
+                    # Install Python3 and pip3 if not available
+                    if ! command -v python3 &> /dev/null; then
+                        apt-get update && apt-get install -y python3 python3-pip
+                    fi
+                    
+                    if ! command -v pip3 &> /dev/null; then
+                        apt-get install -y python3-pip
+                    fi
+                    
+                    # Install AWS dependencies
+                    pip3 install boto3 awscli
+                    
                     node -v
                     npm -v
+                    python3 --version
+                    pip3 --version
                     docker --version
-                    kubectl version --client
+                    kubectl version --client || echo "kubectl not found"
                 '''
             }
         }
@@ -292,7 +306,6 @@ pipeline {
                 script {
                     withCredentials([aws(credentialsId: 'aws-access-key-id', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         sh '''
-                            pip3 install boto3
                             export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
                             export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
                             export AWS_DEFAULT_REGION=us-east-1
