@@ -28,9 +28,15 @@ pipeline {
         stage('Check Environment') {
             steps {
                 sh '''
+                    # Fix broken packages first
+                    apt --fix-broken install -y || true
+                    
                     # Install Node.js if not available
                     if ! command -v node &> /dev/null; then
-                        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+                        # Use NodeSource repository with dependency fix
+                        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+                        apt-get update
+                        apt-get install -y node-corepack || true
                         apt-get install -y nodejs
                     fi
                     
