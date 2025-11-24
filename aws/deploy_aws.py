@@ -3,63 +3,122 @@ import boto3
 import base64
 import json
 import os
+import time
 
 # AWS clients with explicit region
 region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
 ec2 = boto3.client('ec2', region_name=region)
 elbv2 = boto3.client('elbv2', region_name=region)
 
+def cleanup_existing_resources():
+    print("🧹 Cleaning up existing resources...")
+    
+    # Delete ALB if exists
+    try:
+        albs = elbv2.describe_load_balancers(Names=['newsbuddy-alb'])
+        if albs['LoadBalancers']:
+            alb_arn = albs['LoadBalancers'][0]['LoadBalancerArn']
+            elbv2.delete_load_balancer(LoadBalancerArn=alb_arn)
+            print("✅ ALB deleted")
+            time.sleep(10)
+    except elbv2.exceptions.LoadBalancerNotFound:
+        print("ℹ️ ALB doesn't exist")
+    except Exception as e:
+        print(f"⚠️ ALB deletion failed: {e}")
+    
+    # Delete target groups if exist
+    for tg_name in ['newsbuddy-frontend-tg', 'newsbuddy-backend-tg', 'newsbuddy-tg']:
+        try:
+            tgs = elbv2.describe_target_groups(Names=[tg_name])
+            if tgs['TargetGroups']:
+                elbv2.delete_target_group(TargetGroupArn=tgs['TargetGroups'][0]['TargetGroupArn'])
+                print(f"✅ Target group {tg_name} deleted")
+        except elbv2.exceptions.TargetGroupNotFound:
+            print(f"ℹ️ Target group {tg_name} doesn't exist")
+        except Exception as e:
+            print(f"⚠️ Target group {tg_name} deletion failed: {e}")
+    
+    # Terminate EC2 instances if exist
+    try:
+        instances = ec2.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['NewsBuddy']}, {'Name': 'instance-state-name', 'Values': ['running', 'pending']}])
+        if instances['Reservations']:
+            for reservation in instances['Reservations']:
+                for instance in reservation['Instances']:
+                    ec2.terminate_instances(InstanceIds=[instance['InstanceId']])
+                    print(f"✅ Instance {instance['InstanceId']} terminated")
+            time.sleep(30)
+        else:
+            print("ℹ️ No running instances found")
+    except Exception as e:
+        print(f"⚠️ Instance termination failed: {e}")
+    
+    # Delete security group if exists
+    try:
+        sgs = ec2.describe_security_groups(Filters=[{'Name': 'group-name', 'Values': ['newsbuddy-sg']}])
+        if sgs['SecurityGroups']:
+            ec2.delete_security_group(GroupId=sgs['SecurityGroups'][0]['GroupId'])
+            print("✅ Security group deleted")
+        else:
+            print("ℹ️ Security group doesn't exist")
+    except Exception as e:
+        print(f"⚠️ Security group deletion failed: {e}")
+    
+    # Delete key pair if exists
+    try:
+        ec2.describe_key_pairs(KeyNames=['newsbuddy-key'])
+        ec2.delete_key_pair(KeyName='newsbuddy-key')
+        print("✅ Key pair deleted")
+    except ec2.exceptions.ClientError as e:
+        if 'InvalidKeyPair.NotFound' in str(e):
+            print("ℹ️ Key pair doesn't exist")
+        else:
+            print(f"⚠️ Key pair deletion failed: {e}")
+
 def create_key_pair():
     try:
+        ec2.describe_key_pairs(KeyNames=['newsbuddy-key'])
+        print("✅ Key pair already exists")
+        return 'newsbuddy-key'
+    except ec2.exceptions.ClientError:
         response = ec2.create_key_pair(KeyName='newsbuddy-key')
         with open('newsbuddy-key.pem', 'w') as f:
             f.write(response['KeyMaterial'])
         print("✅ Key pair created: newsbuddy-key")
         return 'newsbuddy-key'
-    except:
-        print("✅ Key pair already exists")
-        return 'newsbuddy-key'
 
 def create_security_group():
+    # Check if security group exists
     try:
-        vpc_response = ec2.describe_vpcs(Filters=[{'Name': 'isDefault', 'Values': ['true']}])
-        vpc_id = vpc_response['Vpcs'][0]['VpcId']
-        
-        sg_response = ec2.create_security_group(
-            GroupName='newsbuddy-sg',
-            Description='Security group for NewsBuddy',
-            VpcId=vpc_id
-        )
-        sg_id = sg_response['GroupId']
-        
-        # Inbound rules - restrict SSH to your IP
-        ec2.authorize_security_group_ingress(
-            GroupId=sg_id,
-            IpPermissions=[
-                {'IpProtocol': 'tcp', 'FromPort': 22, 'ToPort': 22, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
-                {'IpProtocol': 'tcp', 'FromPort': 22, 'ToPort': 22, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
-                {'IpProtocol': 'tcp', 'FromPort': 80, 'ToPort': 80, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
-                {'IpProtocol': 'tcp', 'FromPort': 5000, 'ToPort': 5000, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
-            ]
-        )
-        
-        # Outbound rules (anywhere)
-        ec2.authorize_security_group_egress(
-            GroupId=sg_id,
-            IpPermissions=[
-                {'IpProtocol': '-1', 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
-            ]
-        )
-        
-        print(f"✅ Security group created: {sg_id}")
-        return sg_id
-    except Exception as e:
-        # Get existing security group
         sgs = ec2.describe_security_groups(Filters=[{'Name': 'group-name', 'Values': ['newsbuddy-sg']}])
         if sgs['SecurityGroups']:
             print("✅ Security group already exists")
             return sgs['SecurityGroups'][0]['GroupId']
-        raise e
+    except:
+        pass
+    
+    # Create new security group
+    vpc_response = ec2.describe_vpcs(Filters=[{'Name': 'isDefault', 'Values': ['true']}])
+    vpc_id = vpc_response['Vpcs'][0]['VpcId']
+    
+    sg_response = ec2.create_security_group(
+        GroupName='newsbuddy-sg',
+        Description='Security group for NewsBuddy',
+        VpcId=vpc_id
+    )
+    sg_id = sg_response['GroupId']
+    
+    # Inbound rules
+    ec2.authorize_security_group_ingress(
+        GroupId=sg_id,
+        IpPermissions=[
+            {'IpProtocol': 'tcp', 'FromPort': 22, 'ToPort': 22, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
+            {'IpProtocol': 'tcp', 'FromPort': 80, 'ToPort': 80, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
+            {'IpProtocol': 'tcp', 'FromPort': 5000, 'ToPort': 5000, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
+        ]
+    )
+    
+    print(f"✅ Security group created: {sg_id}")
+    return sg_id
 
 def get_userdata_script():
     return base64.b64encode("""#!/bin/bash
@@ -268,6 +327,10 @@ def main():
     print("🚀 Starting AWS deployment for NewsBuddy...")
     
     try:
+        # Clean up existing resources first
+        cleanup_existing_resources()
+        time.sleep(10)
+        
         # Create resources
         key_name = create_key_pair()
         sg_id = create_security_group()
