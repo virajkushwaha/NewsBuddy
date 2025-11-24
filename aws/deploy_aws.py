@@ -99,16 +99,32 @@ REACT_APP_API_URL=http://localhost:5000/api
 REACT_APP_WS_URL=ws://localhost:5000
 EOF
 
-# Create docker-compose override for port 22
+# Create docker-compose override with MongoDB
 cat > docker-compose.override.yml << EOF
 version: '3.8'
 services:
+  mongodb:
+    image: mongo:5.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: newsbuddy
   frontend:
     ports:
-      - "22:80"
+      - "80:80"
+    depends_on:
+      - backend
   backend:
     ports:
       - "5000:5000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/newsbuddy
+volumes:
+  mongodb_data:
 EOF
 
 # Build and run containers with error handling
@@ -179,11 +195,11 @@ def create_alb(sg_id, instance_id):
     alb_arn = alb_response['LoadBalancers'][0]['LoadBalancerArn']
     alb_dns = alb_response['LoadBalancers'][0]['DNSName']
     
-    # Create target group for port 22
-    tg_response = elbv2.create_target_group(
-        Name='newsbuddy-tg',
+    # Create frontend target group
+    frontend_tg = elbv2.create_target_group(
+        Name='newsbuddy-frontend-tg',
         Protocol='HTTP',
-        Port=22,
+        Port=80,
         VpcId=vpc_id,
         TargetType='instance',
         HealthCheckPath='/',
@@ -192,23 +208,56 @@ def create_alb(sg_id, instance_id):
         HealthyThresholdCount=2,
         UnhealthyThresholdCount=3
     )
+    frontend_tg_arn = frontend_tg['TargetGroups'][0]['TargetGroupArn']
     
-    tg_arn = tg_response['TargetGroups'][0]['TargetGroupArn']
+    # Create backend target group
+    backend_tg = elbv2.create_target_group(
+        Name='newsbuddy-backend-tg',
+        Protocol='HTTP',
+        Port=5000,
+        VpcId=vpc_id,
+        TargetType='instance',
+        HealthCheckPath='/health',
+        HealthCheckIntervalSeconds=30,
+        HealthCheckTimeoutSeconds=5,
+        HealthyThresholdCount=2,
+        UnhealthyThresholdCount=3
+    )
+    backend_tg_arn = backend_tg['TargetGroups'][0]['TargetGroupArn']
     
-    # Register instance
+    # Register instances
     elbv2.register_targets(
-        TargetGroupArn=tg_arn,
-        Targets=[{'Id': instance_id, 'Port': 22}]
+        TargetGroupArn=frontend_tg_arn,
+        Targets=[{'Id': instance_id, 'Port': 80}]
+    )
+    elbv2.register_targets(
+        TargetGroupArn=backend_tg_arn,
+        Targets=[{'Id': instance_id, 'Port': 5000}]
     )
     
-    # Create listener
-    elbv2.create_listener(
+    # Create listener with rules
+    listener_response = elbv2.create_listener(
         LoadBalancerArn=alb_arn,
         Protocol='HTTP',
         Port=80,
         DefaultActions=[{
             'Type': 'forward',
-            'TargetGroupArn': tg_arn
+            'TargetGroupArn': frontend_tg_arn
+        }]
+    )
+    listener_arn = listener_response['Listeners'][0]['ListenerArn']
+    
+    # Add rule for API routes
+    elbv2.create_rule(
+        ListenerArn=listener_arn,
+        Priority=100,
+        Conditions=[{
+            'Field': 'path-pattern',
+            'Values': ['/api/*', '/health']
+        }],
+        Actions=[{
+            'Type': 'forward',
+            'TargetGroupArn': backend_tg_arn
         }]
     )
     
