@@ -32,10 +32,11 @@ def create_security_group():
         )
         sg_id = sg_response['GroupId']
         
-        # Inbound rules
+        # Inbound rules - restrict SSH to your IP
         ec2.authorize_security_group_ingress(
             GroupId=sg_id,
             IpPermissions=[
+                {'IpProtocol': 'tcp', 'FromPort': 22, 'ToPort': 22, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
                 {'IpProtocol': 'tcp', 'FromPort': 22, 'ToPort': 22, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
                 {'IpProtocol': 'tcp', 'FromPort': 80, 'ToPort': 80, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
                 {'IpProtocol': 'tcp', 'FromPort': 5000, 'ToPort': 5000, 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
@@ -76,8 +77,11 @@ chmod +x /usr/local/bin/docker-compose
 
 # Clone repository
 cd /home/ec2-user
-git clone https://github.com/your-repo/NewsBuddy.git
+git clone https://github.com/virajkushwaha/NewsBuddy.git
 cd NewsBuddy
+
+# Generate secure JWT secret
+JWT_SECRET=$(openssl rand -base64 32)
 
 # Create environment files
 cat > backend/.env << EOF
@@ -85,7 +89,7 @@ NEWS_API_KEY=79571b9c95fa40fd81389f6f6e79ea6d
 NEWSDATA_API_KEY=pub_bc7c0eb9ffb14c9badbce36ba8439fba
 AWS_REGION=us-east-1
 MONGODB_URI=mongodb://mongodb:27017/newsbuddy
-JWT_SECRET=your-jwt-secret-key
+JWT_SECRET=$JWT_SECRET
 PORT=5000
 EOF
 
@@ -94,20 +98,21 @@ REACT_APP_API_URL=http://localhost:5000/api
 REACT_APP_WS_URL=ws://localhost:5000
 EOF
 
-# Create docker-compose override for port 80
+# Create docker-compose override for port 22
 cat > docker-compose.override.yml << EOF
 version: '3.8'
 services:
   frontend:
     ports:
-      - "80:80"
+      - "22:80"
   backend:
     ports:
       - "5000:5000"
 EOF
 
-# Build and run containers
-docker-compose up -d --build
+# Build and run containers with error handling
+set -e
+docker-compose up -d --build || exit 1
 
 # Set ownership
 chown -R ec2-user:ec2-user /home/ec2-user/NewsBuddy
@@ -134,7 +139,7 @@ def create_ec2_instance(key_name, sg_id):
         }],
         TagSpecifications=[{
             'ResourceType': 'instance',
-            'Tags': [{'Key': 'Name', 'Value': 'earth'}]
+            'Tags': [{'Key': 'Name', 'Value': 'NewsBuddy'}]
         }]
     )
     
@@ -149,7 +154,7 @@ def create_ec2_instance(key_name, sg_id):
     instance = ec2.describe_instances(InstanceIds=[instance_id])['Reservations'][0]['Instances'][0]
     public_ip = instance.get('PublicIpAddress')
     
-    print(f"✅ Instance 'earth' is running at: {public_ip}")
+    print(f"✅ Instance 'NewsBuddy' is running at: {public_ip}")
     return instance_id, public_ip
 
 def create_alb(sg_id, instance_id):
@@ -173,11 +178,11 @@ def create_alb(sg_id, instance_id):
     alb_arn = alb_response['LoadBalancers'][0]['LoadBalancerArn']
     alb_dns = alb_response['LoadBalancers'][0]['DNSName']
     
-    # Create target group
+    # Create target group for port 22
     tg_response = elbv2.create_target_group(
         Name='newsbuddy-tg',
         Protocol='HTTP',
-        Port=80,
+        Port=22,
         VpcId=vpc_id,
         TargetType='instance',
         HealthCheckPath='/',
@@ -192,7 +197,7 @@ def create_alb(sg_id, instance_id):
     # Register instance
     elbv2.register_targets(
         TargetGroupArn=tg_arn,
-        Targets=[{'Id': instance_id, 'Port': 80}]
+        Targets=[{'Id': instance_id, 'Port': 22}]
     )
     
     # Create listener
@@ -212,18 +217,24 @@ def create_alb(sg_id, instance_id):
 def main():
     print("🚀 Starting AWS deployment for NewsBuddy...")
     
-    # Create resources
-    key_name = create_key_pair()
-    sg_id = create_security_group()
-    instance_id, public_ip = create_ec2_instance(key_name, sg_id)
-    alb_dns = create_alb(sg_id, instance_id)
-    
-    print("\n🎉 Deployment completed!")
-    print(f"Instance IP: {public_ip}")
-    print(f"ALB DNS: {alb_dns}")
-    print(f"Frontend URL: http://{alb_dns}")
-    print(f"Backend URL: http://{public_ip}:5000")
-    print(f"SSH: ssh -i newsbuddy-key.pem ec2-user@{public_ip}")
+    try:
+        # Create resources
+        key_name = create_key_pair()
+        sg_id = create_security_group()
+        instance_id, public_ip = create_ec2_instance(key_name, sg_id)
+        alb_dns = create_alb(sg_id, instance_id)
+        
+        print("\n🎉 Deployment completed!")
+        print(f"Instance IP: {public_ip}")
+        print(f"ALB DNS: {alb_dns}")
+        print(f"Frontend URL: http://{alb_dns}")
+        print(f"Backend URL: http://{public_ip}:5000")
+        print(f"SSH: ssh -i newsbuddy-key.pem ec2-user@{public_ip}")
+        
+    except Exception as e:
+        print(f"❌ Deployment failed: {str(e)}")
+        print("Please check AWS credentials and permissions.")
+        raise
 
 if __name__ == "__main__":
     main()

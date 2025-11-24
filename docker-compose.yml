@@ -17,6 +17,12 @@ services:
       - ./docker/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
       - newsbuddy-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
   # Redis Cache
   redis:
@@ -29,6 +35,12 @@ services:
       - redis_data:/data
     networks:
       - newsbuddy-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   # Backend API
   backend:
@@ -53,9 +65,9 @@ services:
       - "5000:5000"
     depends_on:
       mongodb:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./backend/logs:/app/logs
     networks:
@@ -84,6 +96,12 @@ services:
         condition: service_healthy
     networks:
       - newsbuddy-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 
 
