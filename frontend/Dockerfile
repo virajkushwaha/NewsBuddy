@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN apt --fix-broken install -y \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs node-corepack
+    && apt-get install -y nodejs
 
 WORKDIR /app
 
