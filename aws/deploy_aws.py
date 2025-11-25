@@ -21,7 +21,7 @@ def cleanup_existing_resources():
             elbv2.delete_load_balancer(LoadBalancerArn=alb_arn)
             print("✅ ALB deleted")
             time.sleep(10)
-    except elbv2.exceptions.LoadBalancerNotFound:
+    except elbv2.exceptions.LoadBalancerNotFoundException:
         print("ℹ️ ALB doesn't exist")
     except Exception as e:
         print(f"⚠️ ALB deletion failed: {e}")
@@ -33,7 +33,7 @@ def cleanup_existing_resources():
             if tgs['TargetGroups']:
                 elbv2.delete_target_group(TargetGroupArn=tgs['TargetGroups'][0]['TargetGroupArn'])
                 print(f"✅ Target group {tg_name} deleted")
-        except elbv2.exceptions.TargetGroupNotFound:
+        except elbv2.exceptions.TargetGroupNotFoundException:
             print(f"ℹ️ Target group {tg_name} doesn't exist")
         except Exception as e:
             print(f"⚠️ Target group {tg_name} deletion failed: {e}")
@@ -68,7 +68,7 @@ def cleanup_existing_resources():
         ec2.describe_key_pairs(KeyNames=['newsbuddy-key'])
         ec2.delete_key_pair(KeyName='newsbuddy-key')
         print("✅ Key pair deleted")
-    except ec2.exceptions.ClientError as e:
+    except Exception as e:
         if 'InvalidKeyPair.NotFound' in str(e):
             print("ℹ️ Key pair doesn't exist")
         else:
@@ -79,7 +79,7 @@ def create_key_pair():
         ec2.describe_key_pairs(KeyNames=['newsbuddy-key'])
         print("✅ Key pair already exists")
         return 'newsbuddy-key'
-    except ec2.exceptions.ClientError:
+    except Exception:
         response = ec2.create_key_pair(KeyName='newsbuddy-key')
         with open('newsbuddy-key.pem', 'w') as f:
             f.write(response['KeyMaterial'])
