@@ -119,10 +119,10 @@ systemctl start docker
 systemctl enable docker
 usermod -a -G docker ec2-user
 
-# Install Docker Compose v2
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+# Install Docker Compose v2 plugin
+curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+mkdir -p /usr/local/lib/docker/cli-plugins
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # Clone repository
 cd /home/ec2-user
@@ -184,14 +184,14 @@ EOF
 sleep 10
 
 # Build and run containers
-docker-compose up -d --build
+docker compose up -d --build
 
 # Wait for services to start
 sleep 60
 
 # Check service health
-docker-compose ps
-docker-compose logs --tail=50
+docker compose ps
+docker compose logs --tail=50
 
 # Set ownership
 chown -R ec2-user:ec2-user /home/ec2-user/NewsBuddy
@@ -360,9 +360,9 @@ def main():
         print(f"SSH: ssh -i newsbuddy-key.pem ec2-user@{public_ip}")
         print("\n📋 Debugging commands:")
         print(f"ssh -i newsbuddy-key.pem ec2-user@{public_ip}")
-        print("docker-compose ps")
-        print("docker-compose logs backend")
-        print("docker-compose logs frontend")
+        print("docker compose ps")
+        print("docker compose logs backend")
+        print("docker compose logs frontend")
         
     except Exception as e:
         print(f"❌ Deployment failed: {str(e)}")

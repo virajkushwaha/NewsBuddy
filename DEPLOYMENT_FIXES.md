@@ -95,10 +95,10 @@ ssh -i newsbuddy-key.pem ec2-user@<PUBLIC_IP>
 ### Check Docker Services
 ```bash
 cd NewsBuddy
-docker-compose ps
-docker-compose logs backend
-docker-compose logs frontend
-docker-compose logs mongodb
+docker compose ps
+docker compose logs backend
+docker compose logs frontend
+docker compose logs mongodb
 ```
 
 ### Check Service Health
@@ -125,17 +125,17 @@ aws elbv2 describe-target-health --target-group-arn <TARGET_GROUP_ARN>
 ### 1. 503 Service Unavailable from ALB
 - **Cause**: Target groups unhealthy
 - **Fix**: Check health check endpoints and service status
-- **Debug**: `docker-compose logs` and `curl http://localhost:5000/health`
+- **Debug**: `docker compose logs` and `curl http://localhost:5000/health`
 
 ### 2. Backend Authentication Not Working
 - **Cause**: Database connection issues
 - **Fix**: Verify MongoDB is running and connection string is correct
-- **Debug**: `docker-compose logs mongodb` and check MONGODB_URI
+- **Debug**: `docker compose logs mongodb` and check MONGODB_URI
 
 ### 3. Frontend Not Loading
 - **Cause**: Build issues or wrong API URL
 - **Fix**: Check environment variables and build process
-- **Debug**: `docker-compose logs frontend`
+- **Debug**: `docker compose logs frontend`
 
 ### 4. EC2 Instance Not Accessible
 - **Cause**: Security group or userdata script issues
@@ -166,9 +166,9 @@ REACT_APP_WS_URL=ws://localhost:5000
 ## Monitoring & Logs
 
 ### Application Logs
-- Backend: `docker-compose logs backend`
-- Frontend: `docker-compose logs frontend`
-- MongoDB: `docker-compose logs mongodb`
+- Backend: `docker compose logs backend`
+- Frontend: `docker compose logs frontend`
+- MongoDB: `docker compose logs mongodb`
 
 ### AWS Resources
 - EC2 Instance: Check CloudWatch logs
