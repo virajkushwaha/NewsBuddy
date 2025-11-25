@@ -111,21 +111,21 @@ def create_security_group():
 
 def get_userdata_script():
     return base64.b64encode("""#!/bin/bash
-yum update -y
-yum install -y docker git curl
+apt update -y
+apt install -y docker.io git curl
 
 # Start Docker
 systemctl start docker
 systemctl enable docker
-usermod -a -G docker ec2-user
+usermod -a -G docker ubuntu
 
-# Install Docker Compose v2
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+# Install Docker Compose v2 plugin
+mkdir -p /usr/local/lib/docker/cli-plugins
+curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # Clone repository
-cd /home/ec2-user
+cd /home/ubuntu
 git clone https://github.com/virajkushwaha/NewsBuddy.git
 cd NewsBuddy
 
@@ -184,17 +184,17 @@ EOF
 sleep 10
 
 # Build and run containers
-docker-compose up -d --build
+docker compose up -d --build
 
 # Wait for services to start
 sleep 60
 
 # Check service health
-docker-compose ps
-docker-compose logs --tail=50
+docker compose ps
+docker compose logs --tail=50
 
 # Set ownership
-chown -R ec2-user:ec2-user /home/ec2-user/NewsBuddy
+chown -R ubuntu:ubuntu /home/ubuntu/NewsBuddy
 
 """.encode()).decode()
 
@@ -202,7 +202,7 @@ def create_ec2_instance(key_name, sg_id):
     userdata = get_userdata_script()
     
     response = ec2.run_instances(
-        ImageId='ami-0c02fb55956c7d316',  # Amazon Linux 2023
+        ImageId='ami-0c7217cdde317cfec',  # Ubuntu 22.04 LTS
         MinCount=1,
         MaxCount=1,
         InstanceType='t3.medium',  # Upgraded for better performance
@@ -357,12 +357,12 @@ def main():
         print(f"Backend URL: http://{alb_dns}/api")
         print(f"Direct Frontend: http://{public_ip}:3000")
         print(f"Direct Backend: http://{public_ip}:5000")
-        print(f"SSH: ssh -i newsbuddy-key.pem ec2-user@{public_ip}")
+        print(f"SSH: ssh -i newsbuddy-key.pem ubuntu@{public_ip}")
         print("\n📋 Debugging commands:")
-        print(f"ssh -i newsbuddy-key.pem ec2-user@{public_ip}")
-        print("docker-compose ps")
-        print("docker-compose logs backend")
-        print("docker-compose logs frontend")
+        print(f"ssh -i newsbuddy-key.pem ubuntu@{public_ip}")
+        print("docker compose ps")
+        print("docker compose logs backend")
+        print("docker compose logs frontend")
         
     except Exception as e:
         print(f"❌ Deployment failed: {str(e)}")

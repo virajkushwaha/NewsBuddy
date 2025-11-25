@@ -89,7 +89,7 @@ python3 deploy_aws_fixed.py
 
 ### SSH into EC2 Instance
 ```bash
-ssh -i newsbuddy-key.pem ec2-user@<PUBLIC_IP>
+ssh -i newsbuddy-key.pem ubuntu@<PUBLIC_IP>
 ```
 
 ### Check Docker Services
