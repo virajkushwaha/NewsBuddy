@@ -1,20 +1,5 @@
 # Multi-stage build for React app
-FROM ubuntu:22.04 as build
-
-ENV NODE_VERSION=18.19.0
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    gnupg \
-    lsb-release \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt --fix-broken install -y \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
